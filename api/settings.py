@@ -10,22 +10,30 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+def get_env(name, default=None):
+    value= os.getenv(name, default)
+    if value is None:
+        raise RuntimeError(f"Misssing env in the app: {name}")
+    return value
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-j)2rd4l-u+b@%l&nyb5k8%ada9c97yqa(vn@d9@80wx7y*uq9-'
+SECRET_KEY = get_env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = get_env('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [h for h in get_env('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h]
 
 
 # Application definition
@@ -37,6 +45,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # apps
+    'users.apps.UsersConfig',
+    'library.apps.LibraryConfig',
 ]
 
 MIDDLEWARE = [
@@ -58,6 +69,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -74,8 +86,12 @@ WSGI_APPLICATION = 'api.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.backends.postgresql',
+        'NAME': get_env('DB_NAME'),
+        'USER': get_env('DB_USER'),
+        'PASSWORD': get_env('DB_PASSWORD'),
+        'HOST': get_env('DB_HOST'),
+        'PORT': get_env('DB_PORT'),
     }
 }
 
@@ -116,12 +132,19 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
 
-MAILERS = {
-    'default': {
-        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-    },
-}
+# MAILERS = {
+#     'default': {
+#         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+#     },
+# }
+
+EMAIL_BACKEND = get_env('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = get_env('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(get_env('EMAIL_PORT', '25'))
+EMAIL_HOST_USER = get_env('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = get_env('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = get_env('DEFAULT_FROM_EMAIL', 'library@nile.local')
